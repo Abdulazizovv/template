@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import sys
 import environs
 import dj_database_url
 
@@ -23,18 +24,25 @@ env.read_env()
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.str("DJANGO_SECRET_KEY", default=env.str("DJANGO_SECRET_KEY"))
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=False)
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])  # replace * in production
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = env.str("DJANGO_SECRET_KEY", default="insecure-dev-key")
+_USING_TESTS = any(arg in ("test", "pytest") for arg in sys.argv)
+if not DEBUG and not _USING_TESTS and SECRET_KEY == "insecure-dev-key":
+    raise RuntimeError("DJANGO_SECRET_KEY is required when DEBUG=False")
+
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h.strip()]
 
 # CSRF trusted origins
 _default_csrf_trusted = []
 for _h in ALLOWED_HOSTS:
     if _h == "*":
+        continue
+    if _h.startswith(("http://", "https://")):
+        _default_csrf_trusted.append(_h)
         continue
     _default_csrf_trusted.append(f"http://{_h}")
     _default_csrf_trusted.append(f"https://{_h}")
@@ -164,10 +172,30 @@ STATIC_ROOT = BASE_DIR.joinpath("staticfiles")
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR.joinpath("media")
 
+# Upload limits (Telegram updates are small; keep a sensible cap)
+DATA_UPLOAD_MAX_MEMORY_SIZE = env.int("DJANGO_MAX_BODY_BYTES", default=2_000_000)
+FILE_UPLOAD_MAX_MEMORY_SIZE = env.int("DJANGO_MAX_BODY_BYTES", default=2_000_000)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Logging
+LOG_LEVEL = env.str("LOG_LEVEL", default="INFO").upper()
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s %(levelname)s %(name)s: %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "standard"},
+    },
+    "root": {"handlers": ["console"], "level": LOG_LEVEL},
+}
 
 # Security hardening when not in DEBUG
 if not DEBUG:

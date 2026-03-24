@@ -25,6 +25,7 @@ Fill required values:
 - TELEGRAM_WEBHOOK_SECRET
 - DB credentials
 - ALLOWED_HOSTS
+ - DJANGO_SECRET_KEY (required when DEBUG=false)
 
 2) Run database migrations
 
@@ -72,8 +73,8 @@ python manage.py deletewebhook
 ## Development
 
 - Code entry points:
-  - Webhook view: `apps/botapp/views.py: telegram_webhook`
-  - Aiogram bot/dispatcher: `bot/bot.py`, `bot/dispatcher.py`, `bot/routers/__init__.py`
+- Webhook view: `apps/botapp/views.py: telegram_webhook`
+- Aiogram bot/dispatcher: `bot/bot.py`, `bot/dispatcher.py`, `bot/routers/__init__.py`
 - Add new handlers by creating new routers and including them in `bot/routers`.
 
 ## Security

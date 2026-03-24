@@ -5,7 +5,9 @@ from environs import Env
 env = Env()
 env.read_env()
 
-BOT_TOKEN = env.str("BOT_TOKEN")
+BOT_TOKEN = env.str("BOT_TOKEN", default=None)
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN is required")
 
 # Create bot instance (Aiogram v3)
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))

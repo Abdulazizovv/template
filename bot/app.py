@@ -1,18 +1,17 @@
-from aiogram import executor
+import asyncio
 
-from loader import dp
-import middlewares, filters, handlers
-from utils.notify_admins import on_startup_notify
-from utils.set_bot_commands import set_default_commands
-
-
-async def on_startup(dispatcher):
-    # Birlamchi komandalar (/star va /help)
-    await set_default_commands(dispatcher)
-
-    # Bot ishga tushgani haqida adminga xabar berish
-    await on_startup_notify(dispatcher)
+from bot.bot import bot
+from bot.dispatcher import create_dispatcher
+from bot.utils.notify_admins import on_startup_notify
+from bot.utils.set_bot_commands import set_default_commands
 
 
-if __name__ == '__main__':
-    executor.start_polling(dp, on_startup=on_startup)
+async def main() -> None:
+    dp = create_dispatcher()
+    await set_default_commands(bot)
+    await on_startup_notify(bot)
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

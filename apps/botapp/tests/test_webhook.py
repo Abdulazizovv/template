@@ -7,6 +7,7 @@ from django.urls import reverse
 
 class WebhookViewTests(SimpleTestCase):
     async def test_webhook_rejects_missing_secret(self):
+        os.environ["BOT_TOKEN"] = "123456:TEST_TOKEN"
         os.environ["TELEGRAM_WEBHOOK_SECRET"] = "testsecret"
         from apps.botapp import views
         importlib.reload(views)
@@ -19,6 +20,7 @@ class WebhookViewTests(SimpleTestCase):
         assert resp.status_code == 403
 
     async def test_webhook_accepts_valid_secret_and_token(self):
+        os.environ["BOT_TOKEN"] = "123456:TEST_TOKEN"
         os.environ["TELEGRAM_WEBHOOK_SECRET"] = "testsecret"
         from apps.botapp import views
         importlib.reload(views)
