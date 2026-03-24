@@ -71,6 +71,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.middleware.RequestIdMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -183,19 +184,60 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Logging
 LOG_LEVEL = env.str("LOG_LEVEL", default="INFO").upper()
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+LOG_BACKUP_COUNT_DAYS = env.int("LOG_BACKUP_COUNT_DAYS", default=14)
+LOG_ROTATE_UTC = env.bool("LOG_ROTATE_UTC", default=True)
+def _timed_file_handler(filename: str) -> dict:
+    return {
+        "class": "logging.handlers.TimedRotatingFileHandler",
+        "formatter": "json",
+        "filters": ["request_id"],
+        "filename": str(LOG_DIR / filename),
+        "when": "midnight",
+        "backupCount": LOG_BACKUP_COUNT_DAYS,
+        "utc": LOG_ROTATE_UTC,
+    }
+
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "standard": {
-            "format": "%(asctime)s %(levelname)s %(name)s: %(message)s",
+        "json": {
+            "()": "core.logging_utils.JsonFormatter",
         },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "standard"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "filters": ["request_id"],
+        },
+        "django_file": _timed_file_handler("django.log"),
+        "celery_file": _timed_file_handler("celery.log"),
+        "celery_beat_file": _timed_file_handler("celery_beat.log"),
+        "celery_task_file": _timed_file_handler("celery_task.log"),
+        "flower_file": _timed_file_handler("flower.log"),
+    },
+    "filters": {
+        "request_id": {"()": "core.logging_utils.RequestIdFilter"},
+    },
+    "loggers": {
+        "django": {"handlers": ["console", "django_file"], "level": LOG_LEVEL, "propagate": False},
+        "django.request": {"handlers": ["console", "django_file"], "level": LOG_LEVEL, "propagate": False},
+        "core": {"handlers": ["console", "django_file"], "level": LOG_LEVEL, "propagate": False},
+        "celery": {"handlers": ["console", "celery_file"], "level": LOG_LEVEL, "propagate": False},
+        "celery.beat": {"handlers": ["console", "celery_beat_file"], "level": LOG_LEVEL, "propagate": False},
+        "celery.task": {"handlers": ["console", "celery_task_file"], "level": LOG_LEVEL, "propagate": False},
+        "flower": {"handlers": ["console", "flower_file"], "level": LOG_LEVEL, "propagate": False},
     },
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
 }
+
+# Celery logging behavior
+CELERYD_HIJACK_ROOT_LOGGER = False
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
 # Celery
 CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://redis:6379/1")

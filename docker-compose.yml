@@ -6,10 +6,16 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     volumes:
       - .:/usr/src/app
       - static_volume:/usr/src/app/staticfiles
       - media_volume:/usr/src/app/media
+      - logs_volume:/usr/src/app/logs
     expose:
       - "8000"
     depends_on:
@@ -25,6 +31,14 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      - .:/usr/src/app
+      - logs_volume:/usr/src/app/logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     entrypoint: []
     command: celery -A core worker -l INFO
     depends_on:
@@ -40,6 +54,14 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      - .:/usr/src/app
+      - logs_volume:/usr/src/app/logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     entrypoint: []
     command: celery -A core beat -l INFO
     depends_on:
@@ -55,6 +77,14 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      - .:/usr/src/app
+      - logs_volume:/usr/src/app/logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     entrypoint: []
     command: celery -A core flower --address=0.0.0.0 --port=5555 --basic_auth=${FLOWER_BASIC_AUTH:-admin:admin} --url_prefix=flower
     depends_on:
@@ -70,6 +100,11 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     expose:
@@ -86,6 +121,11 @@ services:
   redis:
     image: redis:7.4.7-alpine3.21
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     expose:
       - "6379"
     networks:
@@ -94,6 +134,11 @@ services:
   nginx:
     image: nginx:stable-alpine3.23
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "8080:80"
     volumes:
@@ -110,6 +155,7 @@ volumes:
   postgres_data:
   static_volume:
   media_volume:
+  logs_volume:
 
 networks:
   public:
