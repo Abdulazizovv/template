@@ -197,6 +197,16 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
 }
 
+# Celery
+CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://redis:6379/1")
+CELERY_RESULT_BACKEND = env.str("CELERY_RESULT_BACKEND", default="redis://redis:6379/2")
+CELERY_ACCEPT_CONTENT = env.list("CELERY_ACCEPT_CONTENT", default=["json"])
+CELERY_TASK_SERIALIZER = env.str("CELERY_TASK_SERIALIZER", default="json")
+CELERY_RESULT_SERIALIZER = env.str("CELERY_RESULT_SERIALIZER", default="json")
+CELERY_TIMEZONE = env.str("CELERY_TIMEZONE", default=TIME_ZONE)
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = env.int("CELERY_TASK_TIME_LIMIT", default=300)
+
 # Security hardening when not in DEBUG
 if not DEBUG:
     SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", True)

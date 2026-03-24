@@ -18,6 +18,53 @@ services:
       - public
       - internal
 
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    entrypoint: []
+    command: celery -A core worker -l INFO
+    depends_on:
+      - django
+      - redis
+    networks:
+      - internal
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    entrypoint: []
+    command: celery -A core beat -l INFO
+    depends_on:
+      - django
+      - redis
+    networks:
+      - internal
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    entrypoint: []
+    command: celery -A core flower --address=0.0.0.0 --port=5555 --basic_auth=${FLOWER_BASIC_AUTH:-admin:admin} --url_prefix=flower
+    depends_on:
+      - redis
+      - celery
+    expose:
+      - "5555"
+    networks:
+      - internal
+
   db:
     image: postgres:16.13-alpine3.23
     restart: unless-stopped
