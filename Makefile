@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs shell migrate createsuperuser collectstatic test lint setwebhook deletewebhook webhookinfo
+.PHONY: help build up down restart restart-all logs shell migrate makemigrations-check createsuperuser collectstatic test lint setwebhook deletewebhook webhookinfo
 
 help:
 	@echo "Available targets:"
@@ -6,6 +6,7 @@ help:
 	@echo "  up             - docker compose up -d"
 	@echo "  down           - docker compose down"
 	@echo "  restart        - restart django container"
+	@echo "  restart-all    - restart django, celery, celery-beat, flower"
 	@echo "  logs           - follow logs"
 	@echo "  shell          - open django shell"
 	@echo "  migrate        - run migrations"
@@ -29,6 +30,9 @@ down:
 restart:
 	docker compose restart django
 
+restart-all:
+	docker compose restart django celery celery-beat flower
+
 logs:
 	docker compose logs -f --tail=200
 
@@ -37,6 +41,9 @@ shell:
 
 migrate:
 	docker compose exec django python manage.py migrate
+
+makemigrations-check:
+	docker compose exec django python manage.py makemigrations --check --dry-run
 
 createsuperuser:
 	docker compose exec django python manage.py createsuperuser
@@ -48,7 +55,7 @@ test:
 	docker compose exec django python manage.py test -v 2
 
 lint:
-	- docker compose exec django flake8 || true
+	docker compose exec django flake8
 
 setwebhook:
 	docker compose exec django python manage.py setwebhook --drop-pending

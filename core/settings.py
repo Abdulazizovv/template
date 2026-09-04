@@ -64,14 +64,24 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third-party
+    "rest_framework",
+    "rest_framework.authtoken",
+    "corsheaders",
+    "drf_spectacular",
     # Local apps
+    "apps.accounts",
+    "apps.api",
     "apps.botapp",
     "apps.common",
 ]
 
+AUTH_USER_MODEL = "accounts.User"
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "core.middleware.RequestIdMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -79,6 +89,36 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": env.str("API_ANON_THROTTLE_RATE", default="30/min"),
+        "user": env.str("API_USER_THROTTLE_RATE", default="120/min"),
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "API",
+    "DESCRIPTION": "Project API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
 
 ROOT_URLCONF = "core.urls"
 
@@ -188,6 +228,8 @@ LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 LOG_BACKUP_COUNT_DAYS = env.int("LOG_BACKUP_COUNT_DAYS", default=14)
 LOG_ROTATE_UTC = env.bool("LOG_ROTATE_UTC", default=True)
+
+
 def _timed_file_handler(filename: str) -> dict:
     return {
         "class": "logging.handlers.TimedRotatingFileHandler",
@@ -248,6 +290,26 @@ CELERY_RESULT_SERIALIZER = env.str("CELERY_RESULT_SERIALIZER", default="json")
 CELERY_TIMEZONE = env.str("CELERY_TIMEZONE", default=TIME_ZONE)
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = env.int("CELERY_TASK_TIME_LIMIT", default=300)
+CELERY_TASK_SOFT_TIME_LIMIT = env.int("CELERY_TASK_SOFT_TIME_LIMIT", default=270)
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_RESULT_EXPIRES = env.int("CELERY_RESULT_EXPIRES", default=86400)
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+
+# Telegram bot (single source of truth — do not re-read env vars in bot/* or apps/botapp/*)
+BOT_TOKEN = env.str("BOT_TOKEN", default="")
+TELEGRAM_ADMIN_IDS = env.list("TELEGRAM_ADMIN_IDS", default=[])
+TELEGRAM_WEBHOOK_DOMAIN = env.str("TELEGRAM_WEBHOOK_DOMAIN", default="")
+TELEGRAM_WEBHOOK_PATH = env.str("TELEGRAM_WEBHOOK_PATH", default="/api/telegram/webhook")
+TELEGRAM_WEBHOOK_SECRET = env.str("TELEGRAM_WEBHOOK_SECRET", default="")
+TELEGRAM_WEBHOOK_MAX_BODY = env.int("TELEGRAM_WEBHOOK_MAX_BODY", default=2_000_000)
+
+# Redis (shared by bot FSM storage, health checks, and Celery config above)
+REDIS_URL = env.str("REDIS_URL", default="") or "redis://{host}:{port}/{db}".format(
+    host=env.str("REDIS_HOST", default="redis"),
+    port=env.int("REDIS_PORT", default=6379),
+    db=env.int("REDIS_DB", default=0),
+)
 
 # Security hardening when not in DEBUG
 if not DEBUG:

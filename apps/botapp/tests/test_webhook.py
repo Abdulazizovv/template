@@ -1,18 +1,14 @@
-import os
 import json
-import importlib
-from django.test import AsyncClient, SimpleTestCase
+
+from django.test import AsyncClient, SimpleTestCase, override_settings
 from django.urls import reverse
 
+from bot.bot import bot
 
+
+@override_settings(TELEGRAM_WEBHOOK_SECRET="testsecret")
 class WebhookViewTests(SimpleTestCase):
     async def test_webhook_rejects_missing_secret(self):
-        os.environ["BOT_TOKEN"] = "123456:TEST_TOKEN"
-        os.environ["TELEGRAM_WEBHOOK_SECRET"] = "testsecret"
-        from apps.botapp import views
-        importlib.reload(views)
-        from bot.bot import bot
-
         url = reverse("telegram_webhook", kwargs={"token": bot.token})
         client = AsyncClient()
         payload = {"update_id": 1}
@@ -20,12 +16,6 @@ class WebhookViewTests(SimpleTestCase):
         assert resp.status_code == 403
 
     async def test_webhook_accepts_valid_secret_and_token(self):
-        os.environ["BOT_TOKEN"] = "123456:TEST_TOKEN"
-        os.environ["TELEGRAM_WEBHOOK_SECRET"] = "testsecret"
-        from apps.botapp import views
-        importlib.reload(views)
-        from bot.bot import bot
-
         url = reverse("telegram_webhook", kwargs={"token": bot.token})
         client = AsyncClient()
         payload = {

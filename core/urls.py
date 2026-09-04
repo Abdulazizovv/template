@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from apps.botapp.views import health_check, bot_status, telegram_webhook
 
 urlpatterns = [
@@ -26,6 +27,9 @@ urlpatterns = [
     path('bot-status/', bot_status, name='bot_status'),
     path('api/telegram/webhook/<str:token>', telegram_webhook, name='telegram_webhook_no_slash'),
     path('api/telegram/webhook/<str:token>/', telegram_webhook, name='telegram_webhook'),
+    path('api/v1/', include('apps.api.urls')),
+    path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
 ]
 
 # Serve media files during development

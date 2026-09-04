@@ -1,6 +1,6 @@
 from aiogram import Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from environs import Env
+from django.conf import settings
 try:
     from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
 except Exception:  # pragma: no cover - optional
@@ -10,10 +10,8 @@ from .routers import register_routers
 
 
 def create_dispatcher() -> Dispatcher:
-    env = Env()
-    env.read_env()
     storage = MemoryStorage()
-    redis_url = env.str("REDIS_URL", default="")
+    redis_url = settings.REDIS_URL
     if RedisStorage is not None and redis_url:
         storage = RedisStorage.from_url(
             redis_url,

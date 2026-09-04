@@ -1,11 +1,8 @@
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
-from environs import Env
+from django.conf import settings
 
-env = Env()
-env.read_env()
-
-BOT_TOKEN = env.str("BOT_TOKEN", default=None)
+BOT_TOKEN = settings.BOT_TOKEN
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN is required")
 

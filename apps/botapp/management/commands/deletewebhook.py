@@ -1,16 +1,10 @@
-from django.core.management.base import BaseCommand
-import asyncio
 from bot.bot import bot
+from ._base import BotCommand
 
 
-class Command(BaseCommand):
+class Command(BotCommand):
     help = "Delete Telegram webhook"
 
     def handle(self, *args, **options):
-        async def _del():
-            try:
-                await bot.delete_webhook(drop_pending_updates=False)
-            finally:
-                await bot.session.close()
-        asyncio.run(_del())
+        self.run_async(bot.delete_webhook(drop_pending_updates=False))
         self.stdout.write(self.style.SUCCESS("Webhook deleted."))

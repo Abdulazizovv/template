@@ -16,19 +16,22 @@ RUN apt-get update \
         libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt /usr/src/app/
+# Install Python dependencies (dev extras include flake8 for `make lint`)
+COPY requirements.txt requirements-dev.txt /usr/src/app/
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements-dev.txt
 
 # Copy project
 COPY . /usr/src/app/
 
-# Create staticfiles directory
-RUN mkdir -p /usr/src/app/staticfiles
+# Create dirs the app writes to and make entrypoint executable
+RUN mkdir -p /usr/src/app/staticfiles /usr/src/app/logs \
+    && chmod +x /usr/src/app/docker/entrypoint.sh
 
-# Make entrypoint executable
-RUN chmod +x /usr/src/app/docker/entrypoint.sh
+# Run as a non-root user
+RUN groupadd --gid 1000 app && useradd --uid 1000 --gid app --shell /bin/bash --create-home app \
+    && chown -R app:app /usr/src/app
+USER app
 
 # Expose port
 EXPOSE 8000

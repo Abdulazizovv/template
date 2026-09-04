@@ -2,6 +2,9 @@ aiogram==3.26.0
 celery==5.4.0
 Django==5.2.12
 dj-database-url==3.1.2
+django-cors-headers==4.7.0
+djangorestframework==3.15.2
+drf-spectacular==0.28.0
 environs==14.6.0
 flower==2.0.1
 gunicorn==25.1.0
